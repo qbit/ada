@@ -1,0 +1,37 @@
+var xmpp = require('simple-xmpp');
+
+xmpp.on('chat', function(from, msg) {
+	console.log(from, msg);
+});
+
+xmpp.on('online', function() {
+	xmpp.join('codez@conference.enlighten.im/ada');
+	xmpp.send('qbit@enlighten.im', 'Hi', 'codez@conference.enlighten.im');
+});
+
+xmpp.on('buddy', function(jid, state) {
+});
+
+xmpp.on('error', function(error) {
+	throw error;
+});
+
+xmpp.on('subscribe', function(from) {
+	if ( from.match( /enlighten\.im/ ) ) {
+		xmpp.acceptSubscription(from);
+	}
+});
+
+xmpp.on('groupchat', function(conference, from, message, stamp) {
+	console.log('%s says %s on %s on %s at %s', from, message, conference, stamp.substr(0,9), stamp.substr(10));
+});
+
+
+xmpp.connect({
+	jid: process.env.JID,
+	password: process.env.PASS,
+	host: 'enlighten.im',
+	port: process.env.PORT || 5222	
+});
+
+xmpp.getRoster();
