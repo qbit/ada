@@ -1,12 +1,29 @@
-var xmpp = require('simple-xmpp');
+var xmpp = require('simple-xmpp'),
+fs = require('fs'),
+pkey = '',
+key_list = [],
+pushover = require('pushover-notifications'), push;
+
+fs.readFile('pkey.json', function(e, data) {
+	if (e) {
+		throw e;
+	}
+
+	pkey = JSON.parse(data).key;
+
+	push = new pushover({
+		token: pkey
+	});
+});
 
 xmpp.on('chat', function(from, msg) {
-	console.log(from, msg);
+	// echo!
+	xmpp.send(from, msg);
+	// add bit for users to {de}register their pushover keys
 });
 
 xmpp.on('online', function() {
-	xmpp.join('codez@conference.enlighten.im/ada');
-	xmpp.send('qbit@enlighten.im', 'Hi', 'codez@conference.enlighten.im');
+	/*xmpp.join('codez@conference.enlighten.im/ada');*/
 });
 
 xmpp.on('buddy', function(jid, state) {
@@ -17,12 +34,18 @@ xmpp.on('error', function(error) {
 });
 
 xmpp.on('subscribe', function(from) {
+	// auto accept people that want to talk to us - but only if they
+	// are on enlighten.im - this may change later but keeping
+	// Resistance players out will be hard.
+
 	if ( from.match( /enlighten\.im/ ) ) {
 		xmpp.acceptSubscription(from);
 	}
 });
 
 xmpp.on('groupchat', function(conference, from, message, stamp) {
+	// make some wicked regex to determine if a code is really a
+	// code - then fire off pushover notifications here.
 	console.log('%s says %s on %s on %s at %s', from, message, conference, stamp.substr(0,9), stamp.substr(10));
 });
 

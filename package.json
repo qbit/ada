@@ -9,7 +9,8 @@
   "repository": "",
   "author": "Aaron Bieber <qbit@enlighten.im>",
   "license": "isc",
-	"dependencies": {
-		"simple-xmpp": "~0.1.12"
-	}
+  "dependencies": {
+    "simple-xmpp": "~0.1.12",
+    "pushover-notifications": "~0.1.5"
+  }
 }
