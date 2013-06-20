@@ -2,6 +2,11 @@ var xmpp = require('simple-xmpp'),
 fs = require('fs'),
 pkey = '',
 key_list = [],
+message = {
+	priority: 1,
+	sound: 'magic',
+	title: 'Enlighten.im Code Notification'
+},
 pushover = require('pushover-notifications'), push;
 
 fs.readFile('pkey.json', function(e, data) {
@@ -14,16 +19,69 @@ fs.readFile('pkey.json', function(e, data) {
 	push = new pushover({
 		token: pkey
 	});
+
+	loadKeyList();
 });
 
+function loadKeyList() {
+	fs.readFile('keys.json', function(e, d) {
+		if (e) {
+			throw e;
+		}
+
+		try {
+			key_list = JSON.parse(d);
+		} catch(e) {
+			key_list = [];	
+		}
+
+		console.log('Loaded %d keys', key_list.length);
+	});
+}
+
+function saveKeyList() {
+	fs.writeFile('keys.json', JSON.stringify(key_list), function(e) {
+		if (e) {
+			throw e;
+		}
+
+		console.log('saved keys.json');
+	});
+}
+
 xmpp.on('chat', function(from, msg) {
-	// echo!
-	xmpp.send(from, msg);
-	// add bit for users to {de}register their pushover keys
+	var o = {}, i, l, found = false;
+	var action = msg.match(/^(register|deregister|unregister)\s+(.*)/);
+
+	if (action) {
+		console.log(action[1] + 'ing', action[2]);
+		if (action[1] === 'register') {
+			o.user = from;
+			o.key = action[2].replace(/\s+/g, '');
+			key_list.push(o);
+			xmpp.send(from, 'Added %s to notifications'.replace('%s', action[2]));
+		} else {
+			for (i = 0, l = key_list.length; i < l; i++) {
+			console.log("'%s', '%s', '%s'",key_list[i], action[1], action[2]);
+				if (key_list[i].user === from && key_list[i].key === action[2]) {
+					found = true;
+					key_list.splice(i, 1);
+				}
+			}
+
+			if (found) {
+				xmpp.send(from, 'Removed %s from notifications'.replace('%s', action[2]));
+			} else {
+				xmpp.send(from, 'Key %s not found!'.replace('%s', action[2]));
+			}
+		}
+		saveKeyList();
+	}
 });
 
 xmpp.on('online', function() {
-	/*xmpp.join('codez@conference.enlighten.im/ada');*/
+	xmpp.join('codez@conference.enlighten.im/ada');
+	xmpp.join('codez-discuss@conference.enlighten.im/ada');
 });
 
 xmpp.on('buddy', function(jid, state) {
@@ -43,10 +101,22 @@ xmpp.on('subscribe', function(from) {
 	}
 });
 
-xmpp.on('groupchat', function(conference, from, message, stamp) {
-	// make some wicked regex to determine if a code is really a
-	// code - then fire off pushover notifications here.
-	console.log('%s says %s on %s on %s at %s', from, message, conference, stamp.substr(0,9), stamp.substr(10));
+xmpp.on('groupchat', function(conference, from, msg, stamp) {
+	console.log(conference,from,msg,stamp);
+	var i,l;
+	if (conference === 'codez@conference.enlighten.im') {
+		if ( ! msg.match(/\s/)) {
+			for(i = 0, l = key_list.length;	i < l; i++) {
+				message.user = key_list[i].key;
+				message.message = msg;
+				push.send( message, function(err, result) {
+					if (err) {
+						throw err;
+					}
+				});
+			}
+		}
+	}
 });
 
 
