@@ -76,6 +76,9 @@ xmpp.on('chat', function(from, msg) {
 			}
 		}
 		saveKeyList();
+	} else {
+		xmpp.send(from, 'To register for pushover notifications say: "register <your user key>".');
+		xmpp.send(from, 'To unregister for pushover notifications say: "unregister <your user key>".');
 	}
 });
 
@@ -102,10 +105,13 @@ xmpp.on('subscribe', function(from) {
 });
 
 xmpp.on('groupchat', function(conference, from, msg, stamp) {
-	console.log(conference,from,msg,stamp);
+
+	msg = msg.replace(/^\s+/, '');
+	msg = msg.replace(/\s+$/, '');
+
 	var i,l;
 	if (conference === 'codez@conference.enlighten.im') {
-		if ( ! msg.match(/\s/)) {
+		if ( ! msg.match(/\s/) && ! stamp) {
 			for(i = 0, l = key_list.length;	i < l; i++) {
 				message.user = key_list[i].key;
 				message.message = msg;
