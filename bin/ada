@@ -60,6 +60,10 @@ xmpp.on('chat', function(from, msg) {
 		if (action[1] === 'register') {
 			o.user = from;
 			o.key = action[2].replace(/\s+/g, '');
+			if (o.key === '') {
+				xmpp.send(from, 'invalid key');
+				return;
+			}
 			key_list.push(o);
 			xmpp.send(from, 'Added %s to notifications'.replace('%s', action[2]));
 		} else {
