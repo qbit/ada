@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 var xmpp = require('simple-xmpp'),
 fs = require('fs'),
 pkey = '',
